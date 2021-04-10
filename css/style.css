@@ -1,0 +1,32 @@
+@import "reset.css";
+
+.scroe {
+    text-align: center;
+    margin-bottom: 2rem;
+    font-size: 36px;
+}
+
+.game-board > ul {
+    border: 1px solid #000;
+    width: 250px;
+    margin: 0 auto;
+}
+
+.game-board > ul > li {
+    width: 100%;
+    height: 25px;
+}
+
+.game-board > ul > li > ul {
+    display: flex;
+}
+
+.game-board > ul > li > ul > li {
+    width: 25px;
+    height: 25px;
+    outline: 1px solid #c9c9c9;
+}
+
+.tree {
+    background: #67c23a;
+}
