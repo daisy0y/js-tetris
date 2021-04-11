@@ -1,16 +1,10 @@
+import BLOCKS from './blocks.js'
 const ROWS = 20;
 const COLS = 10;
 let scroe = 0;
 let duration = 500;
 let downInterval,tempMovingItem;
-const BLOCKS = {
-    tree: [
-        [[0,0],[0,1],[1,0],[1,1]],
-        [],
-        [],
-        [],
-    ]
-}
+
 const movingItem = {
     type:'tree',
     direction: 0,
@@ -32,7 +26,7 @@ const makeList = () => {
     }
 }
 
-const renderBlocks = () => {
+const renderBlocks = (moveType = '') => {
     const { type, direction , top, left } = tempMovingItem;
     const  movingBlocks = document.querySelectorAll('.moving');
 
@@ -40,19 +34,62 @@ const renderBlocks = () => {
         moving.classList.remove(type,'moving');
     })
 
-    BLOCKS[type][direction].forEach(block => {
+    BLOCKS[type][direction].some(block => {
         const x = block[0] + left;
         const y = block[1] + top;
         const target = gameBoard.childNodes[y] ? gameBoard.childNodes[y].childNodes[0].childNodes[x] : null;
-        target.classList.add(type,"moving");
+        const isAvailable = checkEmpty(target);
+        if (isAvailable) {
+            target.classList.add(type,"moving") 
+        } else  {
+            tempMovingItem = { ...movingItem },
+            setTimeout(()=>{
+                renderBlocks()
+                moveType === 'top' && seizeBlock();
+            },0)
+            return true;
+        }
     })
+    movingItem.left = left;
+    movingItem.top = top;
+    movingItem.direction = direction;
+}
+const seizeBlock = () => {
+    const  movingBlocks = document.querySelectorAll('.moving');
+    movingBlocks.forEach(moving => {
+        moving.classList.remove('moving');
+        moving.classList.add('seized');
+    })
+    generateNewBlock()
+}
+const generateNewBlock = () => {
+    const array = Object.entries(BLOCKS)
+    const random = Math.floor(Math.random() * array.length);
+    console.log(array, random , array[random][0])
+    movingItem.type = array[random][0]
+    movingItem.top = 0;
+    movingItem.left = 3;
+    movingItem.direction = 0;
+    tempMovingItem = { ...movingItem }
+    renderBlocks()
+}
+const checkEmpty = (target) => {
+    if(!target || target.classList.contains('seized')) return false;
+    return true;
 }
 
 const moveBlock = (type,amount) => {
     tempMovingItem[type] += amount;
-    renderBlocks();
+    renderBlocks(type);
 }
 
+const changeDirection = () => {
+    const direction = tempMovingItem.direction;
+    direction === 3 
+        ? tempMovingItem.direction = 0
+        : tempMovingItem.direction += 1
+    renderBlocks();
+}
 document.addEventListener('keydown',e =>{
     switch(e.keyCode){
         case 39:
@@ -63,6 +100,9 @@ document.addEventListener('keydown',e =>{
             break;
         case 40:
             moveBlock('top', 1)
+            break;
+        case 38:
+            changeDirection();
             break;
         default:
             break;
