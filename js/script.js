@@ -1,29 +1,31 @@
 import BLOCKS from './blocks.js'
 const ROWS = 20;
 const COLS = 10;
-let scroe = 0;
+let score = 0;
 let duration = 500;
 let downInterval,tempMovingItem;
 
 const movingItem = {
-    type:'tree',
+    type:'',
     direction: 0,
     top: 0,
     left: 0,
 }
 const gameBoard = document.querySelector(".game-board > ul");
+const gameText = document.querySelector(".game-text");
+const scoreDisplay = document.querySelector(".score");
+const restart = document.querySelector(".game-text > button");
 
-const makeList = () => {
-    for(let i = 0; i < ROWS; i++){
+const prependNewLine = () => {
         const ul = document.createElement('ul');
         const li = document.createElement('li');
         for(let j = 0; j <COLS; j++){
             const matrix = document.createElement('li');
-            ul.append(matrix);
+            ul.prepend(matrix);
         }
-        li.append(ul);
-        gameBoard.append(li);
-    }
+        li.prepend(ul);
+        gameBoard.prepend(li);
+    
 }
 
 const renderBlocks = (moveType = '') => {
@@ -42,9 +44,13 @@ const renderBlocks = (moveType = '') => {
         if (isAvailable) {
             target.classList.add(type,"moving") 
         } else  {
-            tempMovingItem = { ...movingItem },
+            tempMovingItem = { ...movingItem }
+            if(moveType === 'retry'){
+                clearInterval(downInterval);
+                showGameOver();
+            }
             setTimeout(()=>{
-                renderBlocks()
+                renderBlocks('retry')
                 moveType === 'top' && seizeBlock();
             },0)
             return true;
@@ -54,18 +60,46 @@ const renderBlocks = (moveType = '') => {
     movingItem.top = top;
     movingItem.direction = direction;
 }
+const showGameOver = () => {
+    gameText.style.display = 'flex'
+}
 const seizeBlock = () => {
     const  movingBlocks = document.querySelectorAll('.moving');
     movingBlocks.forEach(moving => {
         moving.classList.remove('moving');
         moving.classList.add('seized');
     })
-    generateNewBlock()
+    checkMatch();
+}
+
+const checkMatch = () => {
+    const childNodes = gameBoard.childNodes;
+    console.log(childNodes)
+    childNodes.forEach(child => {
+        let isMatch = true;
+
+        child.children[0].childNodes.forEach(li =>{
+            if(!li.classList.contains('seized')){
+                isMatch = false;
+            }
+        })
+
+        if(isMatch) {
+            child.remove();
+            prependNewLine();
+            score++;
+            scoreDisplay.innerHTML = score;
+        }
+    })
+    generateNewBlock();
 }
 const generateNewBlock = () => {
+    clearInterval(downInterval)
+    downInterval = setInterval(()=>{
+        moveBlock('top',1) ;
+    },duration)
     const array = Object.entries(BLOCKS)
     const random = Math.floor(Math.random() * array.length);
-    console.log(array, random , array[random][0])
     movingItem.type = array[random][0]
     movingItem.top = 0;
     movingItem.left = 3;
@@ -81,6 +115,13 @@ const checkEmpty = (target) => {
 const moveBlock = (type,amount) => {
     tempMovingItem[type] += amount;
     renderBlocks(type);
+}
+
+const dropBlock = () => {
+    clearInterval(downInterval);
+    downInterval = setInterval(()=>{
+        moveBlock('top',1)
+    },10)
 }
 
 const changeDirection = () => {
@@ -104,6 +145,9 @@ document.addEventListener('keydown',e =>{
         case 38:
             changeDirection();
             break;
+        case 32:
+            dropBlock()
+            break;
         default:
             break;
     }
@@ -112,7 +156,15 @@ document.addEventListener('keydown',e =>{
 
 const init = () => {
     tempMovingItem = {...movingItem}
-    makeList();
-    renderBlocks();
+    for(let i = 0; i < ROWS; i++){
+        prependNewLine();
+    }
+    generateNewBlock();
 }
 init();
+
+restart.addEventListener('click',()=>{
+    gameBoard.innerHTML= '';
+    gameText.style.display = 'none';
+    init();
+})
